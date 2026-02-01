@@ -3,8 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-st.set_page_config(page_title="競走馬 血統分析", layout="centered")
+# ======================
+# 基本設定
+# ======================
+st.set_page_config(
+    page_title="競走馬 血統分析アプリ",
+    layout="centered"
+)
 
+# ======================
+# 関数定義
+# ======================
 def stars(score):
     return "⭐" * int(round(score))
 
@@ -14,15 +23,26 @@ def get_stallion(name, df):
         return None
     return row.iloc[0]
 
+# ======================
+# タイトル
+# ======================
 st.title("🏇 競走馬 血統分析アプリ")
 
+# ======================
+# CSV読み込み
+# ======================
 horses = pd.read_csv("horses.csv")
 stallions = pd.read_csv("stallions.csv")
 
+# ======================
+# 入力UI
+# ======================
 horse_name = st.text_input("馬名を入力してください")
 surface = st.radio("馬場を選択", ["芝", "ダート"])
 
-
+# ======================
+# メイン処理
+# ======================
 if horse_name:
     horse = horses[horses["horse_name"] == horse_name]
 
@@ -38,10 +58,16 @@ if horse_name:
         if sire is None or dam_sire is None:
             st.warning("血統データが不足しています")
         else:
+            # ======================
+            # 血統情報
+            # ======================
             st.subheader("🧬 血統情報")
             st.write(f"父：{sire_name}")
             st.write(f"母父：{dam_sire_name}")
 
+            # ======================
+            # 基礎能力計算
+            # ======================
             weights = {"sire": 0.6, "dam": 0.4}
             traits = ["speed", "stamina", "power", "europe", "usa", "japan"]
 
@@ -51,6 +77,10 @@ if horse_name:
                     sire[t] * weights["sire"] +
                     dam_sire[t] * weights["dam"], 2
                 )
+
+            # ======================
+            # 星評価
+            # ======================
             st.subheader("⭐ 5段階評価")
 
             labels = {
@@ -64,6 +94,10 @@ if horse_name:
 
             for k in labels:
                 st.write(f"{labels[k]}：{stars(result[k])} ({result[k]})")
+
+            # ======================
+            # 芝・ダート適性
+            # ======================
             if surface == "芝":
                 surface_score = (
                     sire["turf"] * 0.6 + dam_sire["turf"] * 0.4
@@ -74,7 +108,12 @@ if horse_name:
                 )
 
             surface_score = round(surface_score, 2)
+            st.subheader("🏟 馬場適性")
             st.metric(f"{surface}適性", surface_score)
+
+            # ======================
+            # 総合血統指数
+            # ======================
             total_index = round(
                 result["speed"] * 0.25 +
                 result["stamina"] * 0.25 +
@@ -84,22 +123,24 @@ if horse_name:
 
             st.subheader("🏆 総合血統指数")
             st.metric("Bloodline Index", total_index)
-           )
-st.subheader("📊 能力バランス")
 
-radar_labels = ["スピード", "スタミナ", "パワー", "欧州", "米国", "日本"]
-radar_values = list(result.values())
-radar_values += radar_values[:1]
+            # ======================
+            # レーダーチャート
+            # ======================
+            st.subheader("📊 能力バランス")
 
-angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
-angles = np.concatenate([angles, [angles[0]]])
+            radar_labels = ["スピード", "スタミナ", "パワー", "欧州", "米国", "日本"]
+            radar_values = list(result.values())
+            radar_values += radar_values[:1]
 
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.plot(angles, radar_values)
-ax.fill(angles, radar_values, alpha=0.25)
+            angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
+            angles = np.concatenate([angles, [angles[0]]])
 
-ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels, fontsize=11)
-ax.set_ylim(0, 5)
+            fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+            ax.plot(angles, radar_values)
+            ax.fill(angles, radar_values, alpha=0.25)
 
-st.pyplot(fig)
+            ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels, fontsize=11)
+            ax.set_ylim(0, 5)
 
+            st.pyplot(fig)
