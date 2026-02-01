@@ -16,6 +16,35 @@ st.set_page_config(
 # ======================
 def stars(score):
     return "⭐" * int(round(score))
+def generate_comment(result, surface, total_index):
+    comments = []
+
+    # タイプ判定
+    if result["speed"] >= 4:
+        comments.append("スピード型")
+    if result["stamina"] >= 4:
+        comments.append("スタミナ型")
+    if result["power"] >= 4:
+        comments.append("パワー型")
+
+    # 馬場適性
+    if surface == "芝":
+        comments.append("芝向き")
+    else:
+        comments.append("ダート向き")
+
+    # レベル感
+    if total_index >= 4.5:
+        level = "G1級の血統"
+    elif total_index >= 3.8:
+        level = "重賞クラスの血統"
+    elif total_index >= 3.2:
+        level = "条件戦向きの血統"
+    else:
+        level = "成長待ちの血統"
+
+    comment = "・".join(comments)
+    return f"{comment}で、{level}。"
 
 def get_stallion(name, df):
     row = df[df["name"] == name]
@@ -121,6 +150,14 @@ if horse_name:
                 surface_score * 0.3, 2
             )
 
+            # ======================
+　　　　　　 # 血統コメント
+            # ======================
+            st.subheader("📝 血統評価コメント")
+
+            comment = generate_comment(result, surface, total_index)
+            st.info(comment)
+
             st.subheader("🏆 総合血統指数")
             st.metric("Bloodline Index", total_index)
 
@@ -144,3 +181,4 @@ if horse_name:
             ax.set_ylim(0, 5)
 
             st.pyplot(fig)
+
