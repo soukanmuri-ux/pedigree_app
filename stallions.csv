@@ -1,4 +1,4 @@
-name,speed,stamina,power,europe,usa,japan
-ディープインパクト,4,3,2,2,1,5
-キングカメハメハ,3,3,4,2,2,4
-Galileo,2,5,3,5,1,1
+name,speed,stamina,power,europe,usa,japan,turf,dirt,line
+ディープインパクト,4,3,2,2,1,5,5,2,SS
+キングカメハメハ,3,3,4,2,2,4,4,3,MrP
+Galileo,2,5,3,5,1,1,4,2,ND
