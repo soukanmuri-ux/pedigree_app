@@ -84,20 +84,22 @@ if horse_name:
 
             st.subheader("🏆 総合血統指数")
             st.metric("Bloodline Index", total_index)
-            st.subheader("📊 能力バランス")
+           )
+st.subheader("📊 能力バランス")
 
-            radar_labels = list(labels.values())
-            radar_values = list(result.values())
-            radar_values += radar_values[:1]
+radar_labels = ["スピード", "スタミナ", "パワー", "欧州", "米国", "日本"]
+radar_values = list(result.values())
+radar_values += radar_values[:1]
 
-            angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
-            angles = np.concatenate([angles, [angles[0]]])
+angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
+angles = np.concatenate([angles, [angles[0]]])
 
-            fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-            ax.plot(angles, radar_values)
-            ax.fill(angles, radar_values, alpha=0.25)
+fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+ax.plot(angles, radar_values)
+ax.fill(angles, radar_values, alpha=0.25)
 
-            ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels)
-            ax.set_ylim(0, 5)
+ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels, fontsize=11)
+ax.set_ylim(0, 5)
 
-            st.pyplot(fig)
+st.pyplot(fig)
+
