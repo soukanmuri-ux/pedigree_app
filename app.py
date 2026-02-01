@@ -1,20 +1,103 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
-st.title("競走馬 血統分析アプリ")
+st.set_page_config(page_title="競走馬 血統分析", layout="centered")
 
-# CSV読み込み
+def stars(score):
+    return "⭐" * int(round(score))
+
+def get_stallion(name, df):
+    row = df[df["name"] == name]
+    if row.empty:
+        return None
+    return row.iloc[0]
+
+st.title("🏇 競走馬 血統分析アプリ")
+
 horses = pd.read_csv("horses.csv")
+stallions = pd.read_csv("stallions.csv")
 
-# 馬名入力
 horse_name = st.text_input("馬名を入力してください")
+surface = st.radio("馬場を選択", ["芝", "ダート"])
+
 
 if horse_name:
-    result = horses[horses["horse_name"] == horse_name]
+    horse = horses[horses["horse_name"] == horse_name]
 
-    if result.empty:
+    if horse.empty:
         st.error("該当する馬が見つかりません")
     else:
-        st.subheader("血統情報")
-        st.write("父:", result.iloc[0]["sire"])
-        st.write("母父:", result.iloc[0]["dam_sire"])
+        sire_name = horse.iloc[0]["sire"]
+        dam_sire_name = horse.iloc[0]["dam_sire"]
+
+        sire = get_stallion(sire_name, stallions)
+        dam_sire = get_stallion(dam_sire_name, stallions)
+
+        if sire is None or dam_sire is None:
+            st.warning("血統データが不足しています")
+        else:
+            st.subheader("🧬 血統情報")
+            st.write(f"父：{sire_name}")
+            st.write(f"母父：{dam_sire_name}")
+
+            weights = {"sire": 0.6, "dam": 0.4}
+            traits = ["speed", "stamina", "power", "europe", "usa", "japan"]
+
+            result = {}
+            for t in traits:
+                result[t] = round(
+                    sire[t] * weights["sire"] +
+                    dam_sire[t] * weights["dam"], 2
+                )
+            st.subheader("⭐ 5段階評価")
+
+            labels = {
+                "speed": "スピード",
+                "stamina": "スタミナ",
+                "power": "パワー",
+                "europe": "欧州",
+                "usa": "米国",
+                "japan": "日本"
+            }
+
+            for k in labels:
+                st.write(f"{labels[k]}：{stars(result[k])} ({result[k]})")
+            if surface == "芝":
+                surface_score = (
+                    sire["turf"] * 0.6 + dam_sire["turf"] * 0.4
+                )
+            else:
+                surface_score = (
+                    sire["dirt"] * 0.6 + dam_sire["dirt"] * 0.4
+                )
+
+            surface_score = round(surface_score, 2)
+            st.metric(f"{surface}適性", surface_score)
+            total_index = round(
+                result["speed"] * 0.25 +
+                result["stamina"] * 0.25 +
+                result["power"] * 0.2 +
+                surface_score * 0.3, 2
+            )
+
+            st.subheader("🏆 総合血統指数")
+            st.metric("Bloodline Index", total_index)
+            st.subheader("📊 能力バランス")
+
+            radar_labels = list(labels.values())
+            radar_values = list(result.values())
+            radar_values += radar_values[:1]
+
+            angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
+            angles = np.concatenate([angles, [angles[0]]])
+
+            fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
+            ax.plot(angles, radar_values)
+            ax.fill(angles, radar_values, alpha=0.25)
+
+            ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels)
+            ax.set_ylim(0, 5)
+
+            st.pyplot(fig)
