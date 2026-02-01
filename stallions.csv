@@ -1,4 +1,6 @@
 name,speed,stamina,power,europe,usa,japan,line
+ディープインパクト,4,4,2,3,1,5,SS
+キングカメハメハ,3,3,4,3,3,4,MrP
 キズナ,4,4,3,3,2,5,SS
 リアルスティール,4,3,3,3,2,5,SS
 コントレイル,5,4,3,3,2,5,SS
@@ -15,7 +17,6 @@ Frankel,5,4,3,5,1,2,ND
 Into Mischief,5,3,4,1,5,1,Storm Bird
 Curlin,3,4,5,1,5,1,MrP
 Tapit,3,4,5,1,5,1,BR
-パレスマリス,4,3,4,1,5,1,MrP
 Maclean's Music,5,2,4,1,5,1,MrP
 マジェスティックウォリアー,4,3,4,1,5,1,MrP
 ダイワメジャー,5,3,3,3,2,5,SS
@@ -138,6 +139,7 @@ New Approach,3,4,3,5,1,1,ND
 Unbridled's Song,4,3,4,1,5,1,MrP
 Tiznow,3,4,5,1,5,1,BR
 パレスマリス,4,4,4,3,5,2,MrP
+
 
 
 
