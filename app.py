@@ -23,7 +23,7 @@ def get_stallion(name, df):
         return None
     return row.iloc[0]
 
-def generate_comment(result, surface, total_index):
+def generate_comment(result, surface, total_index, distance_type):
     comments = []
 
     if result["speed"] >= 4:
@@ -33,10 +33,8 @@ def generate_comment(result, surface, total_index):
     if result["power"] >= 4:
         comments.append("パワー型")
 
-    if surface == "芝":
-        comments.append("芝向き")
-    else:
-        comments.append("ダート向き")
+    comments.append(f"{surface}向き")
+    comments.append(f"{distance_type}適性")
 
     if total_index >= 4.5:
         level = "G1級の血統"
@@ -65,6 +63,7 @@ stallions = pd.read_csv("stallions.csv")
 # ======================
 horse_name = st.text_input("馬名を入力してください")
 surface = st.radio("馬場を選択", ["芝", "ダート"])
+distance_type = st.radio("距離適性", ["短距離", "中距離", "長距離"])
 
 # ======================
 # メイン処理
@@ -131,13 +130,28 @@ if horse_name:
             st.metric(f"{surface}適性", surface_score)
 
             # ----------------------
+            # 距離適性
+            # ----------------------
+            if distance_type == "短距離":
+                distance_score = (result["speed"] * 0.6 + result["power"] * 0.4)
+            elif distance_type == "中距離":
+                distance_score = (result["speed"] * 0.5 + result["stamina"] * 0.5)
+            else:
+                distance_score = (result["stamina"] * 0.6 + result["europe"] * 0.4)
+
+            distance_score = round(distance_score, 2)
+            st.subheader("📏 距離適性")
+            st.metric(distance_type, distance_score)
+
+            # ----------------------
             # 総合血統指数
             # ----------------------
             total_index = round(
-                result["speed"] * 0.25 +
+                result["speed"] * 0.2 +
                 result["stamina"] * 0.25 +
-                result["power"] * 0.2 +
-                surface_score * 0.3, 2
+                result["power"] * 0.15 +
+                surface_score * 0.2 +
+                distance_score * 0.2, 2
             )
 
             st.subheader("🏆 総合血統指数")
@@ -147,10 +161,10 @@ if horse_name:
             # コメント生成
             # ----------------------
             st.subheader("📝 血統評価コメント")
-            st.info(generate_comment(result, surface, total_index))
+            st.info(generate_comment(result, surface, total_index, distance_type))
 
             # ----------------------
-            # レーダーチャート（英語表記で文字化け回避）
+            # レーダーチャート（英語表記）
             # ----------------------
             st.subheader("📊 Ability Balance")
 
@@ -169,3 +183,5 @@ if horse_name:
             ax.set_ylim(0, 5)
 
             st.pyplot(fig)
+
+
