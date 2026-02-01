@@ -1,187 +1,107 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+from matplotlib import rcParams
 
-# ======================
-# ページ設定
-# ======================
-st.set_page_config(
-    page_title="競走馬 血統分析アプリ",
-    layout="centered"
-)
+# 日本語フォント対策（Streamlit Cloud OK）
+rcParams['font.family'] = 'DejaVu Sans'
 
-# ======================
-# 関数定義
-# ======================
-def stars(score):
-    return "⭐" * int(round(score))
-
-def get_stallion(name, df):
-    row = df[df["name"] == name]
-    if row.empty:
-        return None
-    return row.iloc[0]
-
-def generate_comment(result, surface, total_index, distance_type):
-    comments = []
-
-    if result["speed"] >= 4:
-        comments.append("スピード型")
-    if result["stamina"] >= 4:
-        comments.append("スタミナ型")
-    if result["power"] >= 4:
-        comments.append("パワー型")
-
-    comments.append(f"{surface}向き")
-    comments.append(f"{distance_type}適性")
-
-    if total_index >= 4.5:
-        level = "G1級の血統"
-    elif total_index >= 3.8:
-        level = "重賞クラスの血統"
-    elif total_index >= 3.2:
-        level = "条件戦向きの血統"
-    else:
-        level = "成長待ちの血統"
-
-    return "・".join(comments) + f"で、{level}。"
-
-# ======================
-# タイトル
-# ======================
+st.set_page_config(page_title="競走馬 血統分析", layout="centered")
 st.title("🏇 競走馬 血統分析アプリ")
 
 # ======================
-# CSV読み込み
+# CSV 読み込み
 # ======================
 horses = pd.read_csv("horses.csv")
 stallions = pd.read_csv("stallions.csv")
 
 # ======================
-# 入力UI
+# 馬名入力
 # ======================
 horse_name = st.text_input("馬名を入力してください")
-surface = st.radio("馬場を選択", ["芝", "ダート"])
-distance_type = st.radio("距離適性", ["短距離", "中距離", "長距離"])
 
-# ======================
-# メイン処理
-# ======================
 if horse_name:
     horse = horses[horses["horse_name"] == horse_name]
 
     if horse.empty:
         st.error("該当する馬が見つかりません")
-    else:
-        sire_name = horse.iloc[0]["sire"]
-        dam_sire_name = horse.iloc[0]["dam_sire"]
+        st.stop()
 
-        sire = get_stallion(sire_name, stallions)
-        dam_sire = get_stallion(dam_sire_name, stallions)
+    sire_name = horse.iloc[0]["sire"]
+    dam_sire_name = horse.iloc[0]["dam_sire"]
 
-        if sire is None or dam_sire is None:
-            st.warning("血統データが不足しています")
-        else:
-            # ----------------------
-            # 血統情報
-            # ----------------------
-            st.subheader("🧬 血統情報")
-            st.write(f"父：{sire_name}")
-            st.write(f"母父：{dam_sire_name}")
+    sire = stallions[stallions["name"] == sire_name]
+    dam_sire = stallions[stallions["name"] == dam_sire_name]
 
-            # ----------------------
-            # 基礎能力
-            # ----------------------
-            traits = ["speed", "stamina", "power", "europe", "usa", "japan"]
-            result = {}
+    if sire.empty or dam_sire.empty:
+        st.error("種牡馬データが不足しています")
+        st.stop()
 
-            for t in traits:
-                result[t] = round(
-                    sire[t] * 0.6 + dam_sire[t] * 0.4, 2
-                )
+    sire = sire.iloc[0]
+    dam_sire = dam_sire.iloc[0]
 
-            # ----------------------
-            # 星評価
-            # ----------------------
-            st.subheader("⭐ 5段階評価")
-            labels_jp = {
-                "speed": "スピード",
-                "stamina": "スタミナ",
-                "power": "パワー",
-                "europe": "欧州",
-                "usa": "米国",
-                "japan": "日本"
-            }
+    # ======================
+    # 母父 40% 反映
+    # ======================
+    def mix(col):
+        return round(sire[col] * 0.6 + dam_sire[col] * 0.4, 2)
 
-            for k in labels_jp:
-                st.write(f"{labels_jp[k]}：{stars(result[k])} ({result[k]})")
+    result = {
+        "speed": mix("speed"),
+        "stamina": mix("stamina"),
+        "power": mix("power"),
+        "europe": mix("europe"),
+        "usa": mix("usa"),
+        "japan": mix("japan"),
+    }
 
-            # ----------------------
-            # 芝・ダート適性
-            # ----------------------
-            if surface == "芝":
-                surface_score = sire["turf"] * 0.6 + dam_sire["turf"] * 0.4
-            else:
-                surface_score = sire["dirt"] * 0.6 + dam_sire["dirt"] * 0.4
+    # ======================
+    # 派生指標
+    # ======================
+    turf = round(
+        (result["speed"] + result["stamina"] +
+         result["europe"] + result["japan"]) / 4, 2
+    )
 
-            surface_score = round(surface_score, 2)
-            st.subheader("🏟 馬場適性")
-            st.metric(f"{surface}適性", surface_score)
+    dirt = round(
+        (result["power"] + result["usa"] +
+         result["stamina"]) / 3, 2
+    )
 
-            # ----------------------
-            # 距離適性
-            # ----------------------
-            if distance_type == "短距離":
-                distance_score = (result["speed"] * 0.6 + result["power"] * 0.4)
-            elif distance_type == "中距離":
-                distance_score = (result["speed"] * 0.5 + result["stamina"] * 0.5)
-            else:
-                distance_score = (result["stamina"] * 0.6 + result["europe"] * 0.4)
+    short = round(result["speed"], 2)
+    middle = round((result["speed"] + result["stamina"]) / 2, 2)
+    long = round(result["stamina"], 2)
 
-            distance_score = round(distance_score, 2)
-            st.subheader("📏 距離適性")
-            st.metric(distance_type, distance_score)
+    # ======================
+    # 表示
+    # ======================
+    st.subheader("🧬 血統構成")
+    st.write(f"父：{sire_name}")
+    st.write(f"母父：{dam_sire_name}")
 
-            # ----------------------
-            # 総合血統指数
-            # ----------------------
-            total_index = round(
-                result["speed"] * 0.2 +
-                result["stamina"] * 0.25 +
-                result["power"] * 0.15 +
-                surface_score * 0.2 +
-                distance_score * 0.2, 2
-            )
+    st.subheader("📊 能力指数")
+    st.write(result)
 
-            st.subheader("🏆 総合血統指数")
-            st.metric("Bloodline Index", total_index)
+    st.subheader("🌱 適性")
+    st.write(f"芝適性：{turf}")
+    st.write(f"ダート適性：{dirt}")
+    st.write(f"短距離：{short} / 中距離：{middle} / 長距離：{long}")
 
-            # ----------------------
-            # コメント生成
-            # ----------------------
-            st.subheader("📝 血統評価コメント")
-            st.info(generate_comment(result, surface, total_index, distance_type))
+    # ======================
+    # レーダーチャート
+    # ======================
+    labels = list(result.keys())
+    values = list(result.values())
+    values.append(values[0])
 
-            # ----------------------
-            # レーダーチャート（英語表記）
-            # ----------------------
-            st.subheader("📊 Ability Balance")
+    angles = [n / float(len(labels)) * 2 * 3.14159 for n in range(len(labels))]
+    angles.append(angles[0])
 
-            radar_labels = ["Speed", "Stamina", "Power", "Europe", "USA", "Japan"]
-            radar_values = list(result.values())
-            radar_values.append(radar_values[0])
+    fig = plt.figure()
+    ax = plt.subplot(111, polar=True)
+    ax.plot(angles, values)
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_thetagrids([a * 180 / 3.14159 for a in angles[:-1]], labels)
+    ax.set_ylim(0, 5)
 
-            angles = np.linspace(0, 2 * np.pi, len(radar_labels), endpoint=False)
-            angles = np.append(angles, angles[0])
-
-            fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-            ax.plot(angles, radar_values)
-            ax.fill(angles, radar_values, alpha=0.25)
-
-            ax.set_thetagrids(angles[:-1] * 180 / np.pi, radar_labels)
-            ax.set_ylim(0, 5)
-
-            st.pyplot(fig)
-
-
+    st.pyplot(fig)
