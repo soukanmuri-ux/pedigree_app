@@ -16,7 +16,7 @@ st.set_page_config(
 # ======================
 def stars(score):
     return "⭐" * int(round(score))
-def generate_comment(result, surface, total_index):
+    def generate_comment(result, surface, total_index):
     comments = []
 
     # タイプ判定
@@ -45,6 +45,7 @@ def generate_comment(result, surface, total_index):
 
     comment = "・".join(comments)
     return f"{comment}で、{level}。"
+
 
 def get_stallion(name, df):
     row = df[df["name"] == name]
@@ -150,14 +151,6 @@ if horse_name:
                 surface_score * 0.3, 2
             )
 
-            # ======================
-　　　　　　 # 血統コメント
-            # ======================
-            st.subheader("📝 血統評価コメント")
-
-            comment = generate_comment(result, surface, total_index)
-            st.info(comment)
-
             st.subheader("🏆 総合血統指数")
             st.metric("Bloodline Index", total_index)
 
@@ -181,4 +174,3 @@ if horse_name:
             ax.set_ylim(0, 5)
 
             st.pyplot(fig)
-
